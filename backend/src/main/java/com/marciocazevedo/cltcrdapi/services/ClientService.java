@@ -2,6 +2,8 @@ package com.marciocazevedo.cltcrdapi.services;
 
 import java.util.Optional;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +31,7 @@ public class ClientService {
 	@Transactional(readOnly = true)
 	public ClientDTO findById(@PathVariable Long id) {
 		Optional<Client> optCli = repository.findById(id);
-		Client cli = optCli.orElseThrow(() -> new NonexistentIdException("Nonexistent id in database"));
+		Client cli = optCli.orElseThrow(() -> new NonexistentIdException("Nonexistent id in database: " + id));
 		return new ClientDTO(cli);
 	}
 
@@ -39,6 +41,18 @@ public class ClientService {
 		copyDtoToCli(dto, cli);
 		cli = repository.save(cli);
 		return new ClientDTO(cli);
+	}
+
+	@Transactional
+	public ClientDTO update(Long id, ClientDTO dto) {
+		try {
+			Client cli = repository.getOne(id);
+			copyDtoToCli(dto, cli);
+			cli = repository.save(cli);
+			return new ClientDTO(cli);
+		} catch (EntityNotFoundException e) {
+			throw new NonexistentIdException("Nonexistent id in database: " + id);
+		}
 	}
 
 	private void copyDtoToCli(ClientDTO dto, Client cli) {
